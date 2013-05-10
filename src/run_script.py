@@ -1,12 +1,13 @@
 
 import os
 
-orders = range(2,26,2)
-spacing = .005
+orders = [16,24]
+spacing = [.005,.01]
 
-for i in orders:
+for j in spacing:
+	for i in orders:
 
-	os.system('python discrete_ordinates.py -o ' + str(i) + ' -s ' + str(spacing))
+		os.system('python discrete_ordinates.py -o ' + str(i) + ' -s ' + str(j))
 
 
 

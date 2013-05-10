@@ -4,10 +4,15 @@ import ImageDraw
 import ImageFont
 from math import *
 
-def plotMaterial(mesh):
+def plotMaterial(mesh, spacing):
+	
+	if spacing > .005:
+		bit_size = 500.0
+	else:
+		bit_size = 1000.0
 
 	# create image
-	bit_length = round(500.0 / mesh.width)
+	bit_length = round(bit_size / mesh.width)
 	size = int(bit_length * mesh.width)
 	img = Image.new('RGB', (size,size), 'white')
 	draw = ImageDraw.Draw(img)
@@ -33,10 +38,9 @@ def plotMaterial(mesh):
 		draw.line((x*bit_length, 0, x*bit_length, size), fill=(0,0,0))
 
 	# save image
-	img.save('material.png')
-    
+	img.save('material_' + str(spacing)[2:] + '.png')
 
-def plotScalarFlux(mesh, order, iteration):
+def plotScalarFlux(mesh, order, spacing, iteration):
 
 	# create image
 	bit_length = round(500.0 / mesh.width)
@@ -83,8 +87,7 @@ def plotScalarFlux(mesh, order, iteration):
 			draw.rectangle([x*bit_length, y*bit_length, (x+1)*bit_length, (y+1)*bit_length], (red,green,blue))
 
 	# save image
-	img.save('flux_' + str(int(floor(order/10))) + str(order % 10) + '_' + str(int(floor(iteration/10))) + str(iteration % 10) + '.png')
-touc
+	img.save('flux_' + str(spacing)[2:] + '_' + str(int(floor(order/10))) + str(order % 10) + '_' + str(int(floor(iteration/10))) + str(iteration % 10) + '.png')
 
 
 

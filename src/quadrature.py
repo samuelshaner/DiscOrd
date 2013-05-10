@@ -259,9 +259,6 @@ class LevelSymmetricQuadrature:
             (2 * quad['num_polar'] + 2) / 8 * 4
         quad['num_angles_per_octant'] = quad['num_angles'] / 4
         
-        print 'Generating level-symmetric quadrature with %d angles' \
-            % (quad['num_angles'])
-        
         quad['mu'] = numpy.zeros(quad['num_angles_per_octant'])
         quad['eta'] = numpy.zeros(quad['num_angles_per_octant'])
         quad['xi'] = numpy.zeros(quad['num_angles_per_octant'])
