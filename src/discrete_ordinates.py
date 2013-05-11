@@ -381,7 +381,7 @@ def main():
 	# set default values
 	sn_order = 4
 	cell_size = .01
-	tol = .02
+	tol = .0001
 	num_iter = 50
 	geom = 'square'
 	plot_flux = False
@@ -421,8 +421,6 @@ def main():
 				int((cell_width/2.0)*cell_width+cell_width/2.0) + fuel_width/2 -1,
 				int((cell_width/2.0 + 1)*cell_width - 1)]
 
-	print plot_cells
-
 	# assign fuel and moderator materials to mesh
 	mesh.setFuel(fuel)
 	mesh.setModerator(moderator)
@@ -442,12 +440,11 @@ def main():
 	stop = time.time()
 
 	print 'Ran Sn solver with ' + str(sn_order*(sn_order+2)/2)[:5] + ' angles in ' + str(stop-start) + ' seconds'
-	
-	quad = quadrature.LevelSymmetricQuadrature().getQuadrature(sn_order)
-	print 'plotting angular flux in middle of geometry...'
 
 	if plot_flux:
+		quad = quadrature.LevelSymmetricQuadrature().getQuadrature(sn_order)
 		for i in plot_cells:	
+			print 'plotting angular flux for cell ' + str(i)
 			pttr.plotAngularFlux(mesh.cells[i], quad)
 
 	print '----------------------------------------------------------------------'

@@ -107,13 +107,7 @@ def plotAngularFlux(cell, quad):
 	# get the angular fluxes for the selected angles and make theta array
 	ang_fluxes = []
 	theta = []
-	print quad['mu'][min_xi_indices]
-# 	for quadrant in range(4):
-# 		for i in min_xi_indices:
-# 			ang_fluxes.append(cell.ang_flux[quadrant*quad['num_angles_per_octant'] + i])
-# 			theta.append(acos(quad['mu'][i]) + pi/2*quadrant)	
-
-
+	
 	for i in min_xi_indices:
 		ang_fluxes.append(cell.ang_flux[i])
 		theta.append(acos(quad['mu'][i]))	
@@ -159,61 +153,22 @@ def plotAngularFlux(cell, quad):
 	# draw slices for each theta
 	for i, angle in enumerate(theta_sort[1:-1]):
 		i = i+1
-		print 'plotting slice radius ' + str(ang_fluxes_sort[i]/ang_flux_max) + ' theta_min ' + str((theta_sort[i] + theta_sort[i-1])/2) + ' theta_max ' + str((theta_sort[i]+theta_sort[i+1])/2) 
-		for y in range(500):
-			for x in range(500):
-				
-				y = 499 - y
-			
-				# get radius and theta of point
-				radius = sqrt((x-250.0)**2 + (y-250.0)**2)
-				
-				theta_tan = getTheta(x,y)
-# 				print 'x ' + str(x) + ' y ' + str(y) + 'theta_tan ' + str(theta_tan)
-				
-				if radius < ang_fluxes_sort[i]/ang_flux_max*200 and theta_tan >= (theta_sort[i]+theta_sort[i-1])/2 and theta_tan <= (theta_sort[i+1]+theta_sort[i])/2:
-					draw.rectangle([x, 499-y-1, x+1, 499-y], (0,0,0))
+		
+		radius = int(ang_fluxes_sort[i]/ang_flux_max*200)
+		ang_start = int((theta_sort[i]+theta_sort[i-1])/2*180/pi)
+		ang_end   = int((theta_sort[i+1]+theta_sort[i])/2*180/pi)
+		
+# 		print 'plotting slice radius ' + str(radius) + ' theta_min ' + str(ang_start) + ' theta_max ' + str(ang_end) 
+		
+		ang_start = 360 - ang_start
+		ang_end = 360 - ang_end
 
-		draw.line((250, 250, 250 + ang_fluxes_sort[i]/ang_flux_max*200*cos((theta_sort[i]+theta_sort[i-1])/2), 499 - (250 + ang_fluxes_sort[i]/ang_flux_max*200 * sin((theta_sort[i]+theta_sort[i-1])/2))), fill=(255, 255, 255))
-		draw.line((250, 250, 250 + ang_fluxes_sort[i]/ang_flux_max*200*cos((theta_sort[i+1]+theta_sort[i])/2), 499 - (250 + ang_fluxes_sort[i]/ang_flux_max*200 * sin((theta_sort[i+1]+theta_sort[i])/2))), fill=(255, 255, 255))
-
-
-	
+		draw.pieslice((250 - radius, 250 - radius, 250 + radius, 250 + radius), ang_end, ang_start, fill=(0,0,0), outline=(255,255,255))
+		
 	fig = plt.figure()
-	print theta_sort
-	print ang_fluxes_sort 
 	plt.plot(theta_sort, ang_fluxes_sort)
 	
 	fig.savefig('ang_flux.png')
 	img.save('ang_flux_circle_' + str(cell.id) + '.png')
-
-			
-			
-def getTheta(x,y):
-	
-	xa = x - 250.0
-	ya = y - 250.0
-	
-	theta_tan = 0
-	if xa == 0:
-		if ya <=0: 
-			theta_tan = 3*pi/2.0
-		else: 
-			theta_tan = pi/2.0
-	else:
-		
-		theta_tan = atan(ya/xa)
-		
-		if xa < 0:
-			theta_tan += pi
-		elif xa > 0 and ya < 0:
-			theta_tan += 2*pi
-			
-	return theta_tan
-		
-
-
-
-
 
 
