@@ -3,13 +3,12 @@ import Image
 import ImageDraw
 import ImageFont
 from math import *
+import matplotlib.pyplot as plt
+import numpy as np
 
-def plotMaterial(mesh, spacing):
-	
-	if spacing > .005:
-		bit_size = 500.0
-	else:
-		bit_size = 1000.0
+def plotMaterial(mesh, spacing, plot_cells):
+
+	bit_size = 500.0
 
 	# create image
 	bit_length = round(bit_size / mesh.width)
@@ -24,18 +23,20 @@ def plotMaterial(mesh, spacing):
 
 			# fuel red; moderator blue
 			if mesh.cells[y*mesh.width+x].material.mat_type == 'fuel':
-				draw.rectangle([x*bit_length, y*bit_length, (x+1)*bit_length, (y+1)*bit_length], (255,0,0))
+				draw.rectangle([x*bit_length, size - y*bit_length - bit_length, (x+1)*bit_length, size - y*bit_length], (255,0,0))
 			else:
-				draw.rectangle([x*bit_length, y*bit_length, (x+1)*bit_length, (y+1)*bit_length], (0,0,255))
+				draw.rectangle([x*bit_length, size - y*bit_length - bit_length, (x+1)*bit_length, size - y*bit_length], (0,0,255))
 
+			if mesh.cells[y*mesh.width+x].id in plot_cells:
+				draw.rectangle([x*bit_length, size - y*bit_length - bit_length, (x+1)*bit_length, size - y*bit_length], (255,255,255))
 
 	# draw horizontal grid lines
 	for y in range(1,mesh.width):
-		draw.line((0, y*bit_length, size,y*bit_length), fill=(0,0,0))
+		draw.line((0, y*bit_length, size,y*bit_length), fill=(0,0,0), width=1)
 
 	# draw vertical grid lines
 	for x in range(1,mesh.width):
-		draw.line((x*bit_length, 0, x*bit_length, size), fill=(0,0,0))
+		draw.line((x*bit_length, 0, x*bit_length, size), fill=(0,0,0), width=1)
 
 	# save image
 	img.save('material_' + str(spacing)[2:] + '.png')
@@ -84,13 +85,132 @@ def plotScalarFlux(mesh, order, spacing, iteration):
 			blue = int(255*blue)
 
 			# draw pin and pin power
-			draw.rectangle([x*bit_length, y*bit_length, (x+1)*bit_length, (y+1)*bit_length], (red,green,blue))
+			draw.rectangle([x*bit_length, size - y*bit_length - bit_length, (x+1)*bit_length, size - y*bit_length], (red,green,blue))
 
 	# save image
 	img.save('flux_' + str(spacing)[2:] + '_' + str(int(floor(order/10))) + str(order % 10) + '_' + str(int(floor(iteration/10))) + str(iteration % 10) + '.png')
 
 
+def plotAngularFlux(cell, quad):
+	
+	# create image
+	img = Image.new('RGB', (500,500), 'white')
+	draw = ImageDraw.Draw(img)
 
+	# get mus, eta's, and index for smallest polar angle (xi)
+	xi_min = min(quad['xi'])
+	min_xi_indices = []
+	for i,a in enumerate(quad['xi']):
+		if abs(a - xi_min) < .0001:
+			min_xi_indices.append(i)
+
+	# get the angular fluxes for the selected angles and make theta array
+	ang_fluxes = []
+	theta = []
+	print quad['mu'][min_xi_indices]
+# 	for quadrant in range(4):
+# 		for i in min_xi_indices:
+# 			ang_fluxes.append(cell.ang_flux[quadrant*quad['num_angles_per_octant'] + i])
+# 			theta.append(acos(quad['mu'][i]) + pi/2*quadrant)	
+
+
+	for i in min_xi_indices:
+		ang_fluxes.append(cell.ang_flux[i])
+		theta.append(acos(quad['mu'][i]))	
+
+	for i in min_xi_indices:
+		ang_fluxes.append(cell.ang_flux[quad['num_angles_per_octant'] + i])
+		theta.append(pi - acos(quad['mu'][i]))
+
+	for i in min_xi_indices:
+		ang_fluxes.append(cell.ang_flux[2*quad['num_angles_per_octant'] + i])
+		theta.append(pi + acos(quad['mu'][i]))
+
+	for i in min_xi_indices:
+		ang_fluxes.append(cell.ang_flux[3*quad['num_angles_per_octant'] + i])
+		theta.append(2*pi - acos(quad['mu'][i]))
+
+
+	# rarrange theta array from min to max
+	theta_min = min(theta)
+	theta_sort = []
+	ang_fluxes_sort = []
+	for j in range(len(theta)):
+		for i,a in enumerate(theta):
+			if a == theta_min:
+				theta_sort.append(a)
+				ang_fluxes_sort.append(ang_fluxes[i])
+				theta.remove(theta_min)
+				ang_fluxes.remove(ang_fluxes[i])
+				if len(theta) != 0:
+					theta_min = min(theta)
+
+	# append 0 and 2 pi values
+	ang_flux_max = max(ang_fluxes_sort)
+	ang_flux_0 = ang_fluxes_sort[0]
+	theta_0 = - theta_sort[0]
+	ang_fluxes_sort.insert(0, ang_flux_0)
+	theta_sort.insert(0, theta_0)
+	ang_flux_2pi = ang_fluxes_sort[-1]
+	theta_2pi = 2*pi + (2*pi - theta_sort[-1])
+	ang_fluxes_sort.append(ang_flux_2pi)
+	theta_sort.append(theta_2pi)
+	
+	# draw slices for each theta
+	for i, angle in enumerate(theta_sort[1:-1]):
+		i = i+1
+		print 'plotting slice radius ' + str(ang_fluxes_sort[i]/ang_flux_max) + ' theta_min ' + str((theta_sort[i] + theta_sort[i-1])/2) + ' theta_max ' + str((theta_sort[i]+theta_sort[i+1])/2) 
+		for y in range(500):
+			for x in range(500):
+				
+				y = 499 - y
+			
+				# get radius and theta of point
+				radius = sqrt((x-250.0)**2 + (y-250.0)**2)
+				
+				theta_tan = getTheta(x,y)
+# 				print 'x ' + str(x) + ' y ' + str(y) + 'theta_tan ' + str(theta_tan)
+				
+				if radius < ang_fluxes_sort[i]/ang_flux_max*200 and theta_tan >= (theta_sort[i]+theta_sort[i-1])/2 and theta_tan <= (theta_sort[i+1]+theta_sort[i])/2:
+					draw.rectangle([x, 499-y-1, x+1, 499-y], (0,0,0))
+
+		draw.line((250, 250, 250 + ang_fluxes_sort[i]/ang_flux_max*200*cos((theta_sort[i]+theta_sort[i-1])/2), 499 - (250 + ang_fluxes_sort[i]/ang_flux_max*200 * sin((theta_sort[i]+theta_sort[i-1])/2))), fill=(255, 255, 255))
+		draw.line((250, 250, 250 + ang_fluxes_sort[i]/ang_flux_max*200*cos((theta_sort[i+1]+theta_sort[i])/2), 499 - (250 + ang_fluxes_sort[i]/ang_flux_max*200 * sin((theta_sort[i+1]+theta_sort[i])/2))), fill=(255, 255, 255))
+
+
+	
+	fig = plt.figure()
+	print theta_sort
+	print ang_fluxes_sort 
+	plt.plot(theta_sort, ang_fluxes_sort)
+	
+	fig.savefig('ang_flux.png')
+	img.save('ang_flux_circle_' + str(cell.id) + '.png')
+
+			
+			
+def getTheta(x,y):
+	
+	xa = x - 250.0
+	ya = y - 250.0
+	
+	theta_tan = 0
+	if xa == 0:
+		if ya <=0: 
+			theta_tan = 3*pi/2.0
+		else: 
+			theta_tan = pi/2.0
+	else:
+		
+		theta_tan = atan(ya/xa)
+		
+		if xa < 0:
+			theta_tan += pi
+		elif xa > 0 and ya < 0:
+			theta_tan += 2*pi
+			
+	return theta_tan
+		
 
 
 

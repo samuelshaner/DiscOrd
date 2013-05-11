@@ -12,8 +12,9 @@ import time
 
 class Mesh(object):
 
-	def __init__(self, mesh_size, order, tolerance, pitch=1.26, fuel_diameter=0.8, geometry='square'):
-		# create lists for storing values
+	def __init__(self, mesh_size, order, tolerance, pitch=1.26, fuel_diameter=0.70, geometry='square'):
+		
+		# initialize variables and create lists for storing values
 		self.width  = int(pitch/mesh_size)
 		self.quad          = quadrature.LevelSymmetricQuadrature().getQuadrature(order)
 		self.fuel_diameter = fuel_diameter
@@ -25,16 +26,24 @@ class Mesh(object):
 		self.cells         = np.empty(self.width**2, dtype=object)
 		self.ang_flux      = np.zeros((4,self.width,self.num_angles/2))
 		self.geometry      = geometry
-		self.makeCells()
+		
+		# create the mesh cells
+		for y in range(self.width):
+			for x in range(self.width):
+				self.cells[y*self.width+x] = Cell(self.num_angles, y*self.width+x)
 
+
+	# set pointer to fuel material
 	def setFuel(self, fuel):
 
 		self.fuel = fuel
 
+	# set pointer to moderator material
 	def setModerator(self, moderator):
 	
 		self.moderator = moderator
 
+	# give each cell a pointer to a material
 	def makeMeshMaterials(self):
 
 		cw = self.width
@@ -62,15 +71,10 @@ class Mesh(object):
 					else:
 						self.cells[y*cw+x].setMaterial(self.moderator)
 
-
-	def makeCells(self):
-
-		for y in range(self.width):
-			for x in range(self.width):
-				self.cells[y*self.width+x] = Cell(self.num_angles)
-
+	# solve the Sn problem
 	def solveSn(self, update, num_iter):
 
+		# create shortened variables for num_angles and width and initialize eps
 		cw = self.width
 		na = self.num_angles
 		eps = 1.0
@@ -80,7 +84,9 @@ class Mesh(object):
 
 			print 'Sn iteration ' + str(iteration) + ' eps ' + str(eps)
 
+			###################################################################
 			# sweep in the positive mu and eta direction (bottom left corner)
+			###################################################################
 			for y in range(cw):
 				for x in range(cw):
 
@@ -98,7 +104,7 @@ class Mesh(object):
 						# sweep from bottom to top
 						self.ang_flux[1, x, angle] = 2 * cell.ang_flux[angle] - self.ang_flux[1, x, angle]
 
-
+			# update the boundary angular fluxes
 			if update:
 				# reflect on right boundary
 				for y in range(cw):			
@@ -111,7 +117,9 @@ class Mesh(object):
 						self.ang_flux[3, x, angle] = self.ang_flux[1, x, angle]
 
 
-			# sweep in the negative mu and eta direction (top right corner)
+			###################################################################
+			# sweep in the negative mu and eta direction (top right corner)	
+			###################################################################
 			for y in reversed(range(cw)):
 				for x in reversed(range(cw)):
 
@@ -129,7 +137,7 @@ class Mesh(object):
 						# sweep from top to bottom
 						self.ang_flux[3, x, angle + na/4] = 2 * cell.ang_flux[na/2 + angle] - self.ang_flux[3, x, angle + na/4]
 
-
+			# update the boundary angular fluxes
 			if update:
 				# reflect on left boundary
 				for y in range(cw):			
@@ -161,6 +169,7 @@ class Mesh(object):
 						# sweep from bottom to top
 						self.ang_flux[1, x, angle + na/4] = 2 * cell.ang_flux[na/4 + angle] - self.ang_flux[1, x, angle + na/4]
 
+			# update the boundary angular fluxes
 			if update:
 				# reflect on left boundary
 				for y in range(cw):			
@@ -191,7 +200,7 @@ class Mesh(object):
 						# sweep from bottom to top
 						self.ang_flux[3, x, angle] = 2 * cell.ang_flux[3*na/4+ angle] - self.ang_flux[3, x, angle]
 
-
+			# update the boundary angular fluxes
 			if update:
 				# reflect on right boundary
 				for y in range(cw):			
@@ -202,23 +211,28 @@ class Mesh(object):
 				for x in range(cw):			
 					for angle in range(na/4):
 						self.ang_flux[1, x, angle] = self.ang_flux[3, x, angle]
-				
+
+			# if vacuum case, plot scalar flux and compute fuel rxn rate				
 			if update == False:
 				self.RR_isolated = self.computeRRFuel()
 				
+				# plot the scalar flux for vacuum boundary case
  				self.computeScalarFlux()
  				pttr.plotScalarFlux(self, self.order, self.mesh_size, iteration+100)
 
+				# zero out angular flux
 				for i in range(4):		
 					for x in range(cw):			
 						for angle in range(na/2):
 							self.ang_flux[i, x, angle] = 0.0
 
+			# plot the scalar flux for reflective boundary case and compute eps
 			if update:
 				self.computeScalarFlux()
 				pttr.plotScalarFlux(self, self.order, self.mesh_size, iteration)
 				eps = self.computeL2Norm()
 			
+			# check for convergence; if convgerged comput dancoff factor and flux ratio
  			if (update and eps < self.tol):
 				self.RR_lattice = self.computeRRFuel()
 				self.RR_total = self.computeRRTotal()
@@ -231,7 +245,7 @@ class Mesh(object):
 				print 'Dancoff factor ' + str(self.dancoff)
 				break		
 
-
+	# compute the scalar fuel to coolant ratio 
 	def computeFluxRatio(self):
 		
 		# zero flux
@@ -257,6 +271,7 @@ class Mesh(object):
 		return ratio
 
 
+	# compute the rxn rate in the fuel
 	def computeRRFuel(self):
 		
 		# set old flux
@@ -278,10 +293,11 @@ class Mesh(object):
 			for x in range(self.width):
 								
 				if self.cells[y*self.width+x].material.mat_type == 'fuel':
- 					RR_fuel += self.cells[y*self.width+x].flux * self.cells[y*self.width+x].material.sigma_t
- 					
+					RR_fuel += self.cells[y*self.width+x].flux * self.cells[y*self.width+x].material.sigma_t * self.mesh_size**2
+
 		return RR_fuel
 	
+	# compute the total rxn rate
 	def computeRRTotal(self):
 		
 		# set old flux
@@ -301,11 +317,11 @@ class Mesh(object):
 		RR_total = 0.0
 		for y in range(self.width):
 			for x in range(self.width):
-				RR_total += self.cells[y*self.width+x].flux * self.cells[y*self.width+x].material.sigma_t
- 					
+				RR_total += self.cells[y*self.width+x].flux * self.cells[y*self.width+x].material.sigma_t * self.mesh_size**2
+
 		return RR_total
 
-
+	# compute the L2 Norm of the scalar flux between iterations
 	def computeL2Norm(self):
 
 		eps = 0.0
@@ -319,6 +335,7 @@ class Mesh(object):
 		return eps
 	
 
+	# compute and normalize the scalar flux
 	def computeScalarFlux(self):
 		
 		# set old flux
@@ -344,7 +361,6 @@ class Mesh(object):
 
 		avg_flux = avg_flux / (self.width**2)
 
-
 		# normalize flux
 		for y in range(self.width):
 			for x in range(self.width):
@@ -353,21 +369,22 @@ class Mesh(object):
 
 
 
-
 def main():
 	
 	# parse command line options
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "o:s:i:t:g:", ["order", "size", "num_iter", "tolerance", "geometry"])
+		opts, args = getopt.getopt(sys.argv[1:], "o:s:i:t:g:f:", ["order", "size", "num_iter", "tolerance", "geometry", "flux_plot"])
 	except getopt.GetoptError, err:
 		print str(err)
 		sys.exit(2)
 
+	# set default values
 	sn_order = 4
 	cell_size = .01
 	tol = .02
 	num_iter = 50
 	geom = 'square'
+	plot_flux = False
 
 	for o, a in opts:
 		if o in ("-o", "--order"):
@@ -380,33 +397,58 @@ def main():
 			tol = float(a)
 		elif o in ("-g", "--geometry"):
 			geom = a
+		elif o in ("-f", "--flux_plot"):
+			plot_flux = True
+
 		else:
 			assert False, "unhandled option"
 
-
+	# create mesh
 	mesh = Mesh(order=sn_order, mesh_size=cell_size, tolerance=tol, geometry=geom)
 	
 	print 'CASE - mesh_size ' + str(cell_size) + ' order ' + str(sn_order) + ' geometry ' + geom
 	
+	# create fuel and moderator materials
 	fuel = Material('fuel', 100.0, 1.0/(4.0*pi))
 	moderator = Material('moderator', 0.25, 0.0)
+	
+	cell_width = int(1.26 / cell_size)
+	fuel_width = int(0.70 / cell_size)
+	# 1, 2, 3, 4, 5
+	plot_cells = [int((cell_width/2.0)*cell_width+cell_width/2.0),
+				int((cell_width/2.0 + fuel_width/2-1)*cell_width+cell_width/2.0) + fuel_width/2-1, 
+				int(cell_width*cell_width - 1), 
+				int((cell_width/2.0)*cell_width+cell_width/2.0) + fuel_width/2 -1,
+				int((cell_width/2.0 + 1)*cell_width - 1)]
 
+	print plot_cells
+
+	# assign fuel and moderator materials to mesh
 	mesh.setFuel(fuel)
 	mesh.setModerator(moderator)
-
 	mesh.makeMeshMaterials()
 	
-	pttr.plotMaterial(mesh, cell_size)
+	# plot the materials in the mesh
+	pttr.plotMaterial(mesh, cell_size, plot_cells)
 
+	# solve the vacuum boundary Sn problem
 	mesh.solveSn(False, 1)
 
 	start = time.time()
 
+	# solve the reflective boundary Sn problem
 	mesh.solveSn(True, num_iter)
 
 	stop = time.time()
 
 	print 'Ran Sn solver with ' + str(sn_order*(sn_order+2)/2)[:5] + ' angles in ' + str(stop-start) + ' seconds'
+	
+	quad = quadrature.LevelSymmetricQuadrature().getQuadrature(sn_order)
+	print 'plotting angular flux in middle of geometry...'
+
+	if plot_flux:
+		for i in plot_cells:	
+			pttr.plotAngularFlux(mesh.cells[i], quad)
 
 	print '----------------------------------------------------------------------'
 
