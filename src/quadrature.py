@@ -3,35 +3,35 @@ from math import pi, sqrt
 
 class LevelSymmetricQuadrature:
     """A level-symmetric quadrature set
-        
+
         A class to generate level-symmetric quadrature sets for discrete
         ordinates-based deterministic neutron transport.
-        
+
         This is adapted from Jeremy Roberts' implementation for the deterministic
         neutron transport code suite, libdetran:
-        
+
         https://github.com/robertsj/libdetran
         """
-    
+
     def __init__(self):
-        
+
         # Create a dictionary of values used to generate mu, eta, xi and
         # the corresponding weights for a level-symmetric quadrature.
         self.att = {}
         self.wtt = {}
         self.wtt_loc = {}
-        
+
         # LQn S-2 Quadrature Set
         self.att[2] = numpy.array([0.577350269189625764509149])
         self.wtt[2] = numpy.array([1.000000000000000000000000])
         self.wtt_loc[2] = [0]
-        
+
         # LQn S-4 Quadrature Set
         self.att[4] = numpy.array([0.350021174581540677777041,
                                    0.868890300722201205229788])
         self.wtt[4] = numpy.array([0.333333333333333333333333])
         self.wtt_loc[4] = numpy.array([0, 0, 0])
-        
+
         # LQn S-6 Quadrature Set
         self.att[6] = numpy.array([0.266635401516704720331535,
                                    0.681507726536546927403750,
@@ -39,7 +39,7 @@ class LevelSymmetricQuadrature:
         self.wtt[6] = numpy.array([0.176126130863383433783565,
                                    0.157207202469949899549768])
         self.wtt_loc[6] = numpy.array([0, 1, 0, 1, 1, 0])
-        
+
         # LQn S-8 Quadrature Set
         self.att[8] = numpy.array([0.218217890235992381266097,
                                    0.577350269189625764509149,
@@ -49,7 +49,7 @@ class LevelSymmetricQuadrature:
                                    0.0907407407407407407407407,
                                    0.0925925925925925925925926])
         self.wtt_loc[8] = numpy.array([0, 1, 1, 0, 1, 2, 1, 1, 1, 0])
-        
+
         # LQn S-10 Quadrature Set
         self.att[10] = numpy.array([0.189321326478010476671494,
                                     0.508881755582618974382711,
@@ -62,7 +62,7 @@ class LevelSymmetricQuadrature:
                                     0.0539281144878369243545650])
         self.wtt_loc[10] = numpy.array([0, 1, 2, 1, 0, 1, 3, 3,
                                         1, 2, 3, 2, 1, 1, 0])
-        
+
         # LQn S-12 Quadrature Set
         self.att[12] = numpy.array([0.167212652822713264084504,
                                     0.459547634642594690016761,
@@ -77,7 +77,7 @@ class LevelSymmetricQuadrature:
                                      0.0258512916557503911218290])
         self.wtt_loc[12] = numpy.array([0, 1, 2, 2, 1, 0, 1, 3, 4, 3,
                                         1, 2, 4, 4, 2, 2, 3, 2, 1, 1, 0])
-        
+
         # LQn S-14 Quadrature Set
         self.att[14] = numpy.array([0.151985861461031912404799,
                                     0.422156982304796966896263,
@@ -96,7 +96,7 @@ class LevelSymmetricQuadrature:
         self.wtt_loc[14] = numpy.array([0, 1, 2, 3, 2, 1, 0, 1, 4, 5,
                                         5, 4, 1, 2, 5, 6, 5, 2, 3, 5,
                                         5, 3, 2, 4, 2, 1, 1, 0])
-        
+
         # LQn S-16 Quadrature Set
         self.att[16] = numpy.array([0.138956875067780344591732,
                                     0.392289261444811712294197,
@@ -117,7 +117,7 @@ class LevelSymmetricQuadrature:
         self.wtt_loc[16] = numpy.array([0, 1, 2, 3, 3, 2, 1, 0, 1, 4, 5, 6,
                                         5, 4, 1, 2, 5, 7, 7, 5, 2, 3, 6, 7,
                                         6, 3, 3, 5, 5, 3, 2, 4, 2, 1, 1, 0])
-        
+
         # LQn S-18 Quadrature Set
         self.att[18] = numpy.array([0.129344504545924818514086,
                                     0.368043816053393605686086,
@@ -143,7 +143,7 @@ class LevelSymmetricQuadrature:
                                         9, 8, 6, 2, 3, 7, 9, 9, 7, 3,
                                         4, 7, 8, 7, 4, 3, 6, 6, 3, 2,
                                         5, 2, 1, 1, 0])
-        
+
         # LQn S-20 Quadrature Set
         self.att[20] = numpy.array([0.120603343036693597409418,
                                     0.347574292315847257336779,
@@ -173,7 +173,7 @@ class LevelSymmetricQuadrature:
                                         3, 7, 10, 11, 10, 7, 3, 4,
                                         8, 10, 10, 8, 4, 4, 7, 9, 7,
                                         4, 3, 6, 6, 3, 2, 5, 2, 1, 1, 0])
-        
+
         # LQn S-22 Quadrature Set
         self.att[22] = numpy.array([0.113888641383070838173488,
                                     0.330271760593086736334651,
@@ -207,7 +207,7 @@ class LevelSymmetricQuadrature:
                                         3, 4, 9, 12, 13, 12, 9, 4, 5,
                                         9, 11, 11, 9, 5, 4, 8, 10, 8, 4,
                                         3, 7, 7, 3, 2, 6, 2, 1, 1, 0])
-        
+
         # LQn S-24 Quadrature Set
         self.att[24] = numpy.array([0.107544208775147285552086,
                                     0.315151630853896874875332,
@@ -246,33 +246,33 @@ class LevelSymmetricQuadrature:
                                         10, 5, 5, 9, 12, 12, 9, 5, 4, 8,
                                         11, 8, 4, 3, 7, 7, 3, 2, 6, 2, 1,
                                         1, 0])
-    
-    
+
+
     def getQuadrature(self, order=4):
-        
+
         # Initialize a dictionary to contain all of the information for
         # a level-symmetric quadrature of some order (2-24)
         quad = {}
         quad['order'] = order
-        quad['num_polar'] = order / 2
+        quad['num_polar'] = order // 2
         quad['num_angles'] = 2 * quad['num_polar'] * \
-            (2 * quad['num_polar'] + 2) / 8 * 4
-        quad['num_angles_per_octant'] = quad['num_angles'] / 4
-        
+                             (2 * quad['num_polar'] + 2) // 8 * 4
+        quad['num_angles_per_octant'] = quad['num_angles'] // 4
+
         quad['mu'] = numpy.zeros(quad['num_angles_per_octant'])
         quad['eta'] = numpy.zeros(quad['num_angles_per_octant'])
         quad['xi'] = numpy.zeros(quad['num_angles_per_octant'])
         quad['weight'] = numpy.zeros(quad['num_angles_per_octant'])
-        
+
         # Loop over all angles in an octant
         m = 0
-        for i in range(order / 2):
-            for j in range(order/2 - i):
-                
+        for i in range(order // 2):
+            for j in range(order // 2 - i):
+
                 quad['mu'][m] = self.att[order][i]
                 quad['eta'][m] = self.att[order][j]
                 quad['xi'][m] = sqrt(1.0 - quad['mu'][m]**2 - quad['eta'][m]**2)
                 quad['weight'][m] = self.wtt[order][self.wtt_loc[order][m]]
                 m += 1
-        
+
         return quad
